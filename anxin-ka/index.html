@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>安心立命卡 · 玫瑰暮色园子</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plum-0:#3a2136; --rose-1:#5c3350; --rose-2:#8a4d63; --rose-3:#b06a72;
+    --rosegold:#d9a088; --rosegold-bright:#ecc4ac;
+    --cream:#f5e2da; --cream-dim:#c8a6a6;
+    --paper:#faf7f0; --paper-dim:#efe9da;
+    --seal:#a8442f; --seal-deep:#8f3b35;
+    --spirit:#f6dcd6; --spirit-line:#3a2433;
+    --card-w:min(62vw, 250px);
+    --card-h:calc(var(--card-w) * 1.36);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:'Noto Serif SC',serif;background:var(--plum-0);color:var(--cream);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  .bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(1200px 760px at 50% 116%, rgba(232,164,146,.34), transparent 60%),
+      radial-gradient(900px 620px at 82% -4%, rgba(120,66,110,.34), transparent 60%),
+      radial-gradient(760px 540px at 6% 8%, rgba(70,40,80,.3), transparent 60%),
+      linear-gradient(180deg, #331d31 0%, #542f49 34%, #7d4760 66%, #a86272 100%);}
+  .bg::after{content:"";position:absolute;inset:0;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");}
+  #particles{position:fixed;inset:0;z-index:1;pointer-events:none}
+  #app{position:relative;z-index:2;min-height:100dvh;display:flex;flex-direction:column}
+
+  .stage{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;padding:44px 24px;text-align:center;animation:stageIn .7s cubic-bezier(.22,.9,.3,1) both}
+  .stage.active{display:flex}
+  @keyframes stageIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+
+  .eyebrow{font-size:12px;letter-spacing:.5em;text-indent:.5em;color:var(--rosegold-bright);margin-bottom:20px;opacity:.9}
+  .round-tag{font-size:12px;letter-spacing:.4em;text-indent:.4em;color:var(--rosegold-bright);border:1px solid rgba(232,196,172,.4);border-radius:999px;padding:7px 20px;margin-bottom:24px}
+  .round-title{font-family:'Ma Shan Zheng',cursive;font-size:clamp(34px,9vw,48px);color:var(--cream)}
+  .round-sub{margin-top:12px;font-size:13.5px;color:var(--cream-dim);letter-spacing:.1em;line-height:1.9;max-width:300px}
+
+  /* ============ intro spirits（真实素材：走路sprite + 拥抱帧） ============ */
+  .intro-scene{position:relative;width:min(90vw,440px);aspect-ratio:16/9;border-radius:22px;overflow:hidden;background:#BD5A6E;margin-bottom:30px;
+    box-shadow:0 22px 70px rgba(28,12,24,.55),0 0 0 1px rgba(246,220,214,.16),0 0 90px rgba(232,164,146,.22)}
+  .intro-scene::before{content:"";position:absolute;inset:0;z-index:6;pointer-events:none;
+    background:radial-gradient(120% 105% at 50% 28%,transparent 55%,rgba(52,28,48,.3) 100%)}
+  .spirit{position:absolute;bottom:-2%;width:40%;z-index:2;transition:opacity .5s ease;will-change:transform}
+  .spirit img{width:100%;height:auto;display:block}
+  .spirit-left{left:16%;animation:walkL 1.7s cubic-bezier(.3,1,.4,1) both}
+  .spirit-right{right:16%;animation:walkR 1.7s cubic-bezier(.3,1,.4,1) both}
+  @keyframes walkL{from{transform:translateX(-170%)}to{transform:translateX(0)}}
+  @keyframes walkR{from{transform:translateX(170%)}to{transform:translateX(0)}}
+  .spirit-inner{animation:bob .55s ease-in-out 3}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  .spirit-inner.flip{transform:scaleX(-1);animation:bobF .55s ease-in-out 3}
+  @keyframes bobF{0%,100%{transform:scaleX(-1) translateY(0)}50%{transform:scaleX(-1) translateY(-9px)}}
+  .hug-frame{position:absolute;inset:0;z-index:4;width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.07);
+    transition:opacity .85s ease,transform 1.6s cubic-bezier(.22,.9,.3,1)}
+  .intro-scene.hugging .spirit{opacity:0}
+  .intro-scene.hugging .hug-frame{opacity:1;transform:scale(1)}
+  .embrace-glow{position:absolute;left:50%;top:50%;width:150%;aspect-ratio:1;border-radius:50%;z-index:5;pointer-events:none;
+    background:radial-gradient(circle,rgba(255,232,206,.8) 0%,rgba(246,196,176,.4) 38%,transparent 72%);
+    transform:translate(-50%,-50%) scale(0);opacity:0}
+  .intro-scene.hugging .embrace-glow{animation:glowBloom 1.7s cubic-bezier(.22,.9,.3,1) both}
+  @keyframes glowBloom{0%{transform:translate(-50%,-50%) scale(0);opacity:0}30%{transform:translate(-50%,-50%) scale(1.05);opacity:.85}100%{transform:translate(-50%,-50%) scale(1);opacity:.32}}
+  .spark{position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,232,214,.9);box-shadow:0 0 9px 2px rgba(255,206,186,.55);z-index:5;opacity:0;animation:sparkFloat 4.6s ease-in-out infinite;pointer-events:none}
+  @keyframes sparkFloat{0%{opacity:0;transform:translateY(8px)}30%{opacity:.95}65%{opacity:.4}100%{opacity:0;transform:translateY(-30px)}}
+  .intro-title{font-family:'Ma Shan Zheng',cursive;font-size:clamp(48px,14vw,76px);line-height:1.05;color:var(--cream);text-shadow:0 0 40px rgba(232,164,146,.4);opacity:0;transform:translateY(20px);transition:1s cubic-bezier(.22,.9,.3,1)}
+  .intro-title .dot{color:var(--rosegold-bright)}
+  .intro-title.show{opacity:1;transform:none}
+  .intro-rest{opacity:0;transform:translateY(16px);transition:.9s cubic-bezier(.22,.9,.3,1);display:flex;flex-direction:column;align-items:center}
+  .intro-rest.show{opacity:1;transform:none}
+  .intro-sub{margin-top:14px;font-size:14px;font-weight:300;color:var(--cream-dim);letter-spacing:.16em;line-height:2}
+
+  .ask{font-size:16px;font-weight:500;letter-spacing:.1em;margin-top:26px}
+  .ask-hint{margin-top:8px;font-size:12px;color:var(--cream-dim);letter-spacing:.08em}
+  .q-input{margin-top:20px;width:min(84vw,340px);background:rgba(255,255,255,.08);border:1px solid rgba(232,196,172,.35);border-radius:12px;color:var(--cream);font-family:'Noto Serif SC',serif;font-size:15px;padding:14px 18px;text-align:center;letter-spacing:.06em;outline:none;transition:.3s}
+  .q-input::placeholder{color:rgba(200,166,166,.6)}
+  .q-input:focus{border-color:var(--rosegold-bright);box-shadow:0 0 0 3px rgba(232,196,172,.16);background:rgba(255,255,255,.12)}
+
+  .btn{margin-top:26px;display:inline-block;cursor:pointer;border:none;font-family:'Noto Serif SC',serif;font-size:15px;font-weight:600;letter-spacing:.28em;text-indent:.28em;color:#4a2438;padding:15px 44px;border-radius:999px;background:linear-gradient(135deg,var(--rosegold-bright),var(--rosegold));box-shadow:0 8px 28px rgba(180,110,100,.4);transition:.35s cubic-bezier(.22,.9,.3,1)}
+  .btn:hover{transform:translateY(-3px);box-shadow:0 14px 36px rgba(180,110,100,.55)}
+  .btn:active{transform:translateY(-1px) scale(.98)}
+  .btn.ghost{background:transparent;color:var(--rosegold-bright);border:1px solid rgba(232,196,172,.5);box-shadow:none}
+  .btn.ghost:hover{background:rgba(232,196,172,.12)}
+
+  /* ============ tree ============ */
+  .tree{position:relative;width:min(86vw,330px);aspect-ratio:300/340;margin:30px 0 4px}
+  .tree-svg{position:absolute;inset:0;width:100%;height:100%}
+  .node{position:absolute;width:44px;height:44px;cursor:pointer;transform:translate(-50%,-50%);transition:transform .4s cubic-bezier(.22,.9,.3,1),opacity .5s,filter .4s;z-index:3}
+  .node:hover{transform:translate(-50%,-50%) scale(1.22)}
+  .node .bob{width:100%;height:100%;animation:nbob 4.5s ease-in-out infinite}
+  @keyframes nbob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-3px) rotate(2deg)}}
+  .leaf-shape{position:relative;width:30px;height:30px;margin:7px;background:linear-gradient(135deg,#c9e5b1,#87b773);border-radius:0 55% 0 55%;transform:rotate(45deg);box-shadow:0 0 18px rgba(216,236,172,.85),0 4px 10px rgba(40,20,40,.3)}
+  .leaf-shape::after{content:"";position:absolute;left:50%;top:50%;width:1.5px;height:130%;background:rgba(95,135,75,.55);transform:translate(-50%,-50%)}
+  .node.dim{opacity:.55;filter:saturate(.6);cursor:default}
+  .node.dim:hover{transform:translate(-50%,-50%)}
+  .node.dim .leaf-shape{background:linear-gradient(135deg,#8fb87c,#6a965c);box-shadow:0 2px 6px rgba(40,20,40,.25)}
+  .node.gone{opacity:0 !important;pointer-events:none}
+  .apple-shape{position:relative;width:30px;height:30px;margin:9px 7px 5px;background:radial-gradient(circle at 32% 26%, #ffb59e, #f05a38 50%, #c23a24 90%);border-radius:48% 52% 50% 50%/55% 55% 45% 45%;box-shadow:0 0 18px rgba(255,130,95,.55),0 4px 10px rgba(40,20,40,.3)}
+  .apple-shape::before{content:"";position:absolute;top:-5px;left:52%;width:2.5px;height:8px;background:#5a3a2a;border-radius:2px;transform:rotate(8deg)}
+  .apple-shape::after{content:"";position:absolute;top:-4px;left:62%;width:10px;height:6px;background:#7fae6e;border-radius:0 60% 0 60%;transform:rotate(-24deg)}
+  .node.dim .apple-shape{background:radial-gradient(circle at 32% 26%, #d98a76, #b8543e 55%, #96422e 90%);box-shadow:0 2px 6px rgba(40,20,40,.25)}
+  .tree-hint{font-size:12.5px;color:var(--cream-dim);letter-spacing:.22em;margin-top:2px}
+
+  /* ============ wordcard：外框式（图像卡完整在内，字在卡外一圈） ============ */
+  .reveal-wrap{position:relative;margin:30px 0 4px;width:100%;display:flex;justify-content:center;min-height:calc(var(--card-h) + 26px)}
+  .layered{position:relative;width:var(--card-w);height:var(--card-h)}
+  .wordcard{position:absolute;inset:0;background:var(--paper);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px rgba(40,15,30,.55),0 0 0 1px rgba(232,196,172,.3);animation:cardDrop .7s cubic-bezier(.22,.9,.3,1) both}
+  @keyframes cardDrop{from{opacity:0;transform:translateY(46px) scale(.95)}to{opacity:1;transform:none}}
+  .img-card{position:absolute;left:16.5%;top:12.8%;right:16.5%;bottom:12.8%;border-radius:8px;overflow:hidden;box-shadow:0 5px 16px rgba(60,30,50,.3);background:#e8e0d2}
+  .img-card img{width:100%;height:100%;object-fit:cover;display:block}
+  .wc-rect{position:absolute;left:15%;top:11.3%;right:15%;bottom:11.3%;border:1.5px solid var(--seal-deep);border-radius:9px;pointer-events:none;animation:rectIn .6s cubic-bezier(.22,.9,.3,1) .45s both}
+  @keyframes rectIn{from{opacity:0;transform:scale(1.07)}to{opacity:1;transform:scale(1)}}
+  .wc-word{position:absolute;z-index:3;color:var(--seal-deep);font-family:'Noto Serif SC','Songti SC',serif;font-weight:600;display:flex;align-items:center;justify-content:center;animation:wordIn .5s ease both}
+  .wc-word-top{top:0;left:0;right:0;height:11.3%;letter-spacing:.32em;text-indent:.32em;animation-delay:.65s}
+  .wc-word-bottom{bottom:0;left:0;right:0;height:11.3%;letter-spacing:.32em;text-indent:.32em;animation-delay:.8s}
+  .wc-word-left{left:0;top:0;bottom:0;width:15%;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:.26em;animation-delay:.95s}
+  .wc-word-right{right:0;top:0;bottom:0;width:15%;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:.26em;animation-delay:1.1s}
+  @keyframes wordIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .big-card{width:var(--card-w);height:var(--card-h);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px rgba(40,15,30,.55),0 0 0 1px rgba(232,196,172,.3);animation:cardPop .7s cubic-bezier(.22,.9,.3,1) both;background:var(--paper)}
+  .big-card img{width:100%;height:100%;object-fit:cover;display:block}
+  @keyframes cardPop{from{opacity:0;transform:scale(.82) translateY(20px)}to{opacity:1;transform:none}}
+
+  .qstage .q-big{font-family:'Ma Shan Zheng',cursive;font-size:clamp(26px,7vw,36px);line-height:1.65;color:var(--cream);max-width:320px;text-shadow:0 0 26px rgba(232,164,146,.25)}
+  .qstage .q-note{margin-top:16px;font-size:12.5px;color:var(--cream-dim);letter-spacing:.12em}
+  .qstage textarea{margin-top:26px;width:min(86vw,340px);min-height:96px;background:rgba(255,255,255,.08);border:1px solid rgba(232,196,172,.35);border-radius:12px;color:var(--cream);font-family:'Noto Serif SC',serif;font-size:14.5px;line-height:1.9;padding:14px 18px;letter-spacing:.04em;outline:none;resize:vertical;transition:.3s}
+  .qstage textarea::placeholder{color:rgba(200,166,166,.55)}
+  .qstage textarea:focus{border-color:var(--rosegold-bright);box-shadow:0 0 0 3px rgba(232,196,172,.16)}
+
+  .quote-box{max-width:340px;animation:quoteIn 1.4s cubic-bezier(.22,.9,.3,1) both}
+  @keyframes quoteIn{from{opacity:0;transform:translateY(24px);filter:blur(6px)}to{opacity:1;transform:none;filter:blur(0)}}
+  .quote-mark{font-family:'Ma Shan Zheng',cursive;font-size:64px;color:var(--rosegold-bright);opacity:.6;line-height:.6}
+  .quote-text{font-family:'Ma Shan Zheng',cursive;font-size:clamp(26px,7.4vw,38px);line-height:1.7;color:var(--cream);margin:18px 0 26px;text-shadow:0 0 30px rgba(232,164,146,.35)}
+  .quote-seal{display:inline-flex;width:44px;height:44px;border:2px solid var(--seal);color:var(--seal);border-radius:8px;align-items:center;justify-content:center;font-family:'Ma Shan Zheng',cursive;font-size:20px;transform:rotate(-6deg);animation:sealStamp .5s cubic-bezier(.34,1.56,.64,1) 1s both;background:rgba(244,196,180,.15)}
+  @keyframes sealStamp{from{opacity:0;transform:rotate(-6deg) scale(2.2)}to{opacity:1;transform:rotate(-6deg) scale(1)}}
+
+  .final-card{width:min(88vw,330px);background:linear-gradient(170deg,var(--paper),var(--paper-dim));border-radius:16px;overflow:hidden;box-shadow:0 28px 70px rgba(40,15,30,.6);animation:cardPop .8s cubic-bezier(.22,.9,.3,1) both;text-align:left}
+  .final-layered{position:relative;width:100%;aspect-ratio:3/3.8}
+  .final-layered .wordcard{border-radius:0;box-shadow:none;animation:none}
+  .final-body{padding:20px 24px 24px;color:#33291a}
+  .final-q{font-size:12px;letter-spacing:.12em;color:#a08050}
+  .final-q span{display:block;font-size:14.5px;color:#4a3f2c;margin-top:5px;line-height:1.7}
+  .final-journey{margin-top:14px;border-top:1px dashed rgba(160,130,80,.4);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+  .fj-row{font-size:12.5px;line-height:1.7;color:#5c4d33}
+  .fj-row b{display:inline-block;min-width:3.2em;color:var(--seal-deep);font-weight:600;letter-spacing:.1em}
+  .final-quote{font-size:13.5px;color:#8a6f45;letter-spacing:.06em;line-height:1.9;border-top:1px dashed rgba(160,130,80,.4);padding-top:14px;margin-top:14px}
+  .final-foot{display:flex;justify-content:space-between;align-items:center;margin-top:16px;font-size:10px;letter-spacing:.3em;color:#b09868}
+  .final-actions{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap;justify-content:center}
+  .cta{margin-top:34px;font-size:13.5px;color:var(--cream-dim);letter-spacing:.1em;line-height:2}
+  .wechat-card{margin-top:34px;display:inline-flex;flex-direction:column;align-items:center;background:#fdfaf5;border-radius:16px;padding:18px 24px 16px;box-shadow:0 14px 44px rgba(28,12,24,.45),0 0 0 1px rgba(246,220,214,.22);transition:transform .35s cubic-bezier(.22,.9,.3,1)}
+  .wechat-card:hover{transform:translateY(-3px)}
+  .wechat-qr{width:168px;height:auto;border-radius:8px;display:block}
+  .wechat-text{margin-top:12px;text-align:center}
+  .wechat-text strong{display:block;font-size:14px;color:#8a4d63;letter-spacing:.1em;font-weight:600}
+  .wechat-text span{display:block;margin-top:4px;font-size:12px;color:#b3899a;letter-spacing:.06em}
+  .cta strong{color:var(--rosegold-bright);font-weight:600}
+
+  .progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--rosegold),var(--rosegold-bright));z-index:10;transition:width .6s cubic-bezier(.22,.9,.3,1);width:0}
+  .foot-note{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:.3em;color:rgba(200,166,166,.45);z-index:5;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<canvas id="particles"></canvas>
+<div class="progress" id="progress"></div>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="trunkGrad" x1="0" y1="1" x2="0" y2="0">
+    <stop offset="0" stop-color="#46301f"/><stop offset="1" stop-color="#6b4c38"/>
+  </linearGradient>
+  <radialGradient id="treeGlow" cx="0.5" cy="0.45" r="0.55">
+    <stop offset="0" stop-color="rgba(246,216,166,.34)"/>
+    <stop offset="0.55" stop-color="rgba(246,216,166,.15)"/>
+    <stop offset="1" stop-color="rgba(246,216,166,0)"/>
+  </radialGradient>
+</defs></svg>
+<div id="app">
+
+  <!-- 入场：小精灵走进来，拥抱 -->
+  <section class="stage active" id="s-intro">
+    <div class="intro-scene" id="introScene">
+      <img class="hug-frame" src="片头动画/片头尾帧-小精灵拥抱.jpg" alt="">
+      <div class="spirit spirit-left"><div class="spirit-inner"><img src="片头动画/小精灵-透明.png" alt=""></div></div>
+      <div class="spirit spirit-right"><div class="spirit-inner flip"><img src="片头动画/小精灵-透明.png" alt=""></div></div>
+      <div class="embrace-glow"></div>
+      <i class="spark" style="left:16%;top:34%"></i>
+      <i class="spark" style="left:30%;top:20%;animation-delay:.9s"></i>
+      <i class="spark" style="left:52%;top:16%;animation-delay:1.7s"></i>
+      <i class="spark" style="left:70%;top:26%;animation-delay:.5s"></i>
+      <i class="spark" style="left:84%;top:40%;animation-delay:2.3s"></i>
+      <i class="spark" style="left:42%;top:44%;animation-delay:3.1s"></i>
+    </div>
+    <h1 class="intro-title" id="introTitle">安心<span class="dot">·</span>立命</h1>
+    <div class="intro-rest" id="introRest">
+      <p class="intro-sub">生命之树 · 一场与自己的对话</p>
+      <p class="ask">此刻，你心里有一件事吗？</p>
+      <p class="ask-hint">写下来，或只在心里默念</p>
+      <input class="q-input" id="qInput" type="text" placeholder="我最近在想……（可不填）" maxlength="60">
+      <button class="btn" id="btnStart">走进园子</button>
+    </div>
+  </section>
+
+  <section class="stage" id="s-tree-image">
+    <div class="round-tag">第一轮 · 观图</div>
+    <h2 class="round-title">生命之树</h2>
+    <p class="round-sub">每一片叶子里，都藏着一幅画</p>
+    <div class="tree" id="treeImage"></div>
+    <p class="tree-hint">— 随意点击一片发光的叶子 —</p>
+  </section>
+
+  <section class="stage qstage" id="s-feel">
+    <div class="round-tag">第一轮 · 观图</div>
+    <div class="reveal-wrap"><div class="big-card"><img id="revealedImage" src="" alt="图卡"></div></div>
+    <p class="q-big">看到这幅画，<br>你的第一感受是什么？</p>
+    <p class="q-note">它和你心里那件事，有什么关联？</p>
+    <textarea id="inFeel" placeholder="写几个字，或不写，继续"></textarea>
+    <button class="btn ghost" data-next="s-obstacle">继续</button>
+  </section>
+
+  <section class="stage qstage" id="s-obstacle">
+    <div class="round-tag">第二轮 · 障碍</div>
+    <p class="q-big">回到你的问题——<br>什么，障碍住了你？</p>
+    <p class="q-note">那个卡住你的东西，是什么</p>
+    <textarea id="inObstacle" placeholder="写几个字，或不写，继续"></textarea>
+    <button class="btn ghost" id="btnToApple">去摘一个苹果</button>
+  </section>
+
+  <section class="stage" id="s-tree-word">
+    <div class="round-tag">第三轮 · 叠字</div>
+    <h2 class="round-title">苹果树</h2>
+    <p class="round-sub">每一个苹果里，都藏着一个字</p>
+    <div class="tree" id="treeWord"></div>
+    <p class="tree-hint">— 请随意摘一个苹果 —</p>
+  </section>
+
+  <section class="stage qstage" id="s-reframe">
+    <div class="round-tag">第三轮 · 叠字</div>
+    <div class="reveal-wrap"><div class="layered" id="layeredWordcard"></div></div>
+    <p class="q-big">现在，有什么新的觉察和发现？</p>
+    <textarea id="inReframe" placeholder="写几个字，或不写，继续"></textarea>
+    <button class="btn ghost" data-next="s-resource">继续</button>
+  </section>
+
+  <section class="stage qstage" id="s-resource">
+    <div class="round-tag">第四轮 · 资源</div>
+    <p class="q-big">面对这件事，<br>你拥有什么资源？</p>
+    <p class="q-note">人、能力、时间、经历，都算</p>
+    <textarea id="inResource" placeholder="写几个字，或不写，继续"></textarea>
+    <button class="btn ghost" data-next="s-action">继续</button>
+  </section>
+
+  <section class="stage qstage" id="s-action">
+    <div class="round-tag">第五轮 · 行动</div>
+    <p class="q-big">接下来，<br>你可以做的一件小事是什么？</p>
+    <p class="q-note">小到今天就能做</p>
+    <textarea id="inAction" placeholder="写几个字，或不写，继续"></textarea>
+    <button class="btn ghost" id="btnToQuote">拾一句金句</button>
+  </section>
+
+  <section class="stage" id="s-quote">
+    <div class="round-tag">收 · 金句</div>
+    <div class="quote-box">
+      <div class="quote-mark">“</div>
+      <div class="quote-text" id="quoteText"></div>
+      <div class="quote-seal">安</div>
+    </div>
+    <button class="btn" id="btnToFinal" style="margin-top:42px">收下这张卡</button>
+  </section>
+
+  <section class="stage" id="s-final">
+    <div class="eyebrow" style="margin-bottom:24px">这一轮，属于你</div>
+    <div class="final-card">
+      <div class="final-layered" id="finalWordcard"></div>
+      <div class="final-body">
+        <div class="final-q">你问<span id="finalQuestion"></span></div>
+        <div class="final-journey" id="finalJourney"></div>
+        <div class="final-quote" id="finalQuote"></div>
+        <div class="final-foot"><span>安心立命卡</span><span>安 · 立</span></div>
+      </div>
+    </div>
+    <div class="final-actions">
+      <button class="btn ghost" id="btnAgain">再走一次</button>
+      <button class="btn" id="btnSave">长按保存这张卡</button>
+    </div>
+    <div class="wechat-card">
+      <img class="wechat-qr" src="微信二维码.png" alt="meg 的微信二维码">
+      <div class="wechat-text"><strong>扫码加 meg 微信</strong><span>一对一陪你把这个问题走完</span></div>
+    </div>
+  </section>
+
+</div>
+<div class="foot-note">安 心 立 命</div>
+
+<script>
+/* ============ 小精灵：改用真实生成素材（走路sprite + 拥抱帧），见 intro-scene ============ */
+
+/* intro choreography：走进来 → 拥抱（交叠淡入） → 标题 */
+setTimeout(()=>{
+  document.querySelectorAll('.spirit').forEach(s=>s.style.animation='none');
+  document.getElementById('introScene').classList.add('hugging');
+},1750);
+setTimeout(()=>document.getElementById('introTitle').classList.add('show'),2550);
+setTimeout(()=>document.getElementById('introRest').classList.add('show'),3350);
+
+/* ============ 树（根深叶茂，绿叶，注入两棵树） ============ */
+const TREE_SVG=`<svg class="tree-svg" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="150" cy="323" rx="132" ry="12" fill="rgba(50,26,44,.42)"/>
+  <path d="M132 316 C 108 318 84 318 62 314" stroke="#46301f" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <path d="M182 316 C 206 318 230 318 250 313" stroke="#46301f" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <path d="M140 318 C 122 322 104 324 88 322" stroke="#46301f" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M174 318 C 192 322 210 324 226 322" stroke="#46301f" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M126 318 C 136 280 138 245 136 210 C 135 190 130 172 121 158 C 126 152 133 150 138 153 C 146 166 150 182 152 200 C 155 182 160 166 168 153 C 173 150 180 152 186 158 C 178 172 173 190 171 210 C 172 245 176 280 188 318 Z" fill="url(#trunkGrad)"/>
+  <path d="M146 300 C 147 270 147 245 146 222" stroke="#3a2818" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <path d="M159 305 C 159 278 159 252 158 228" stroke="#3a2818" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.45"/>
+  <path d="M129 155 C 119 141 108 131 95 123" stroke="#5a3d2c" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M177 155 C 187 141 197 131 209 123" stroke="#5a3d2c" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <path d="M152 200 C 152 179 152 158 152 136" stroke="#5a3d2c" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <ellipse cx="150" cy="115" rx="158" ry="108" fill="url(#treeGlow)"/>
+  <ellipse cx="150" cy="128" rx="140" ry="90" fill="#4a7044"/>
+  <circle cx="58" cy="112" r="52" fill="#578050"/>
+  <circle cx="150" cy="62" r="56" fill="#618c58"/>
+  <circle cx="242" cy="112" r="52" fill="#537a4c"/>
+  <circle cx="92" cy="165" r="48" fill="#618c58"/>
+  <circle cx="208" cy="165" r="48" fill="#578050"/>
+  <circle cx="150" cy="172" r="46" fill="#679460"/>
+  <circle cx="26" cy="150" r="36" fill="#537a4c"/>
+  <circle cx="274" cy="150" r="36" fill="#4d7347"/>
+  <circle cx="105" cy="88" r="36" fill="#71a066"/>
+  <circle cx="200" cy="92" r="32" fill="#71a066"/>
+  <circle cx="150" cy="122" r="32" fill="#7baa6f"/>
+  <circle cx="62" cy="135" r="24" fill="#6a9660"/>
+  <circle cx="238" cy="137" r="24" fill="#6a9660"/>
+  <circle cx="128" cy="70" r="20" fill="#85b478"/>
+  <circle cx="180" cy="75" r="18" fill="#85b478"/>
+  <circle cx="150" cy="100" r="18" fill="#8dbc7f"/>
+  <circle cx="175" cy="160" r="30" fill="#42663d" opacity="0.5"/>
+  <circle cx="225" cy="128" r="26" fill="#42663d" opacity="0.45"/>
+  <circle cx="105" cy="175" r="24" fill="#42663d" opacity="0.4"/>
+  <circle cx="75" cy="110" r="20" fill="#4a7044" opacity="0.4"/>
+  <circle cx="118" cy="192" r="32" fill="#5c8754"/>
+  <circle cx="182" cy="192" r="32" fill="#578050"/>
+  <circle cx="150" cy="198" r="30" fill="#618c58"/>
+  <circle cx="138" cy="208" r="14" fill="#42663d" opacity="0.55"/>
+  <circle cx="162" cy="208" r="14" fill="#42663d" opacity="0.55"/>
+  <circle cx="100" cy="70" r="6" fill="#4d7347" opacity="0.6"/>
+  <circle cx="170" cy="60" r="5" fill="#4d7347" opacity="0.6"/>
+  <circle cx="222" cy="132" r="6" fill="#42663d" opacity="0.5"/>
+  <circle cx="68" cy="118" r="5" fill="#42663d" opacity="0.5"/>
+  <path d="M58 318 q3 -10 6 0 M68 320 q3 -9 6 0 M234 318 q3 -10 6 0 M224 320 q3 -9 6 0" stroke="#65925c" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>`;
+document.getElementById('treeImage').insertAdjacentHTML('afterbegin',TREE_SVG);
+document.getElementById('treeWord').insertAdjacentHTML('afterbegin',TREE_SVG);
+
+/* ============ data ============ */
+const IMAGE_CARDS=[
+  {src:'图卡48张/01-自然意境/图卡01-晨雾扁舟.jpg'},{src:'图卡48张/01-自然意境/图卡02-风中之树.jpg'},
+  {src:'图卡48张/01-自然意境/图卡03-焦土烈日.jpg'},{src:'图卡48张/01-自然意境/图卡04-云隙光.jpg'},
+  {src:'图卡48张/01-自然意境/图卡05-残荷秋雨.jpg'},{src:'图卡48张/01-自然意境/图卡06-枝头新芽.jpg'},
+  {src:'图卡48张/01-自然意境/图卡07-雾中岔路.jpg'},{src:'图卡48张/01-自然意境/图卡08-云海日出.jpg'},
+  {src:'图卡48张/02-人物独处/图卡09-窗前独坐.jpg'},{src:'图卡48张/02-人物独处/图卡10-长路一人.jpg'},
+  {src:'图卡48张/02-人物独处/图卡11-树下闭目.jpg'},{src:'图卡48张/02-人物独处/图卡12-深夜一盏灯.jpg'},
+  {src:'图卡48张/02-人物独处/图卡13-雨中低头.jpg'},{src:'图卡48张/02-人物独处/图卡14-望向远方.jpg'},
+  {src:'图卡48张/02-人物独处/图卡15-抱住自己.jpg'},{src:'图卡48张/02-人物独处/图卡16-抬头迎光.jpg'},
+  {src:'图卡48张/03-人与他人/图卡17-相依.jpg'},{src:'图卡48张/03-人与他人/图卡18-背对.jpg'},
+  {src:'图卡48张/03-人与他人/图卡19-之间有空隙.jpg'},{src:'图卡48张/03-人与他人/图卡20-护着你.jpg'},
+  {src:'图卡48张/03-人与他人/图卡21-走向两边.jpg'},{src:'图卡48张/03-人与他人/图卡22-同行.jpg'},
+  {src:'图卡48张/03-人与他人/图卡23-奔向彼此.jpg'},{src:'图卡48张/03-人与他人/图卡24-面对面.jpg'},
+  {src:'图卡48张/04-生活烟火/图卡25-一碗热汤.jpg'},{src:'图卡48张/04-生活烟火/图卡26-餐桌.jpg'},
+  {src:'图卡48张/04-生活烟火/图卡27-车窗边.jpg'},{src:'图卡48张/04-生活烟火/图卡28-深夜的窗.jpg'},
+  {src:'图卡48张/04-生活烟火/图卡29-杂乱桌面.jpg'},{src:'图卡48张/04-生活烟火/图卡30-菜市场.jpg'},
+  {src:'图卡48张/04-生活烟火/图卡31-阳台.jpg'},{src:'图卡48张/04-生活烟火/图卡32-旧物.jpg'},
+  {src:'图卡48张/05-抽象心境/图卡33-撕裂.jpg'},{src:'图卡48张/05-抽象心境/图卡34-缠绕.jpg'},
+  {src:'图卡48张/05-抽象心境/图卡35-空旷一点.jpg'},{src:'图卡48张/05-抽象心境/图卡36-涌动.jpg'},
+  {src:'图卡48张/05-抽象心境/图卡37-压下来.jpg'},{src:'图卡48张/05-抽象心境/图卡38-散开.jpg'},
+  {src:'图卡48张/05-抽象心境/图卡39-金缮.jpg'},{src:'图卡48张/05-抽象心境/图卡40-暗中萌芽.jpg'},
+  {src:'图卡48张/06-超现实隐喻/图卡41-带着井旅行.jpg'},{src:'图卡48张/06-超现实隐喻/图卡42-开着的鸟笼.jpg'},
+  {src:'图卡48张/06-超现实隐喻/图卡43-两张脸.jpg'},{src:'图卡48张/06-超现实隐喻/图卡44-不一致的影子.jpg'},
+  {src:'图卡48张/06-超现实隐喻/图卡45-变形的钟.jpg'},{src:'图卡48张/06-超现实隐喻/图卡46-虚空之门.jpg'},
+  {src:'图卡48张/06-超现实隐喻/图卡47-镜中不同.jpg'},{src:'图卡48张/06-超现实隐喻/图卡48-树洞.jpg'}
+];
+const TEXT_CARDS=['改过','功课','觉察','付出','人生哲学','接纳','幽默','允许','安心','探索人生使命','原则','积善','发问','聆听','欣赏','爱','转念','立志','尊重'];
+const QUOTES=[
+  '格物就是转念。','如果你要成为一个慈悲的人，请先慈悲自己。','解决当下的模式，而不是解决当下的问题。',
+  '向内走，安顿吾心。','我越小越快乐，我越大越纠结。','生活是用来体验的，不是用来懂得。',
+  '井底之蛙出门旅行，\n却仍随身携带着他的井。','任何情绪的背后都有正面的价值。','谁痛谁改变，谁改变谁受益。',
+  '我们身外的一切现象，\n都在我们身内有对应的存在。','当你给事物贴上标签，\n你就看不到真相了。','焦虑来自你试图掌控你不可控的事。',
+  '我们总在寻找答案，\n却忽略了问题本身。','留白的程度与开心的程度成正比。','被看见是光的能量，不被看见是黑暗的能量。',
+  '如果往前走，你愿意放下什么？','倾宇宙之力活在眼前一瞬。','春有百花秋有月，夏天凉风冬有雪。',
+  '明白的人，当下无事。','禅是大自然的心，\n晴时多云偶阵雨。','内心的平静是真正的快乐。'
+];
+
+const state={question:'',image:null,text:null,quote:'',feel:'',obstacle:'',reframe:'',resource:'',action:''};
+const $=id=>document.getElementById(id);
+const progressMap={'s-intro':4,'s-tree-image':16,'s-feel':30,'s-obstacle':44,'s-tree-word':56,'s-reframe':70,'s-resource':80,'s-action':88,'s-quote':95,'s-final':100};
+function go(id){document.querySelectorAll('.stage').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');$('progress').style.width=progressMap[id]+'%';window.scrollTo(0,0);}
+
+/* 字卡=外框：图像卡完整在内，字围在卡外一圈 */
+function wordCardHTML(word){
+  const len=[...word].length;
+  const h=len<=1?28:len===2?22:len<=4?15:11;
+  const v=len<=1?24:len===2?18:len<=4?12.5:9.5;
+  return `<div class="wordcard">
+    <div class="img-card"><img src="${state.image.src}" alt="图卡"></div>
+    <div class="wc-rect"></div>
+    <div class="wc-word wc-word-top" style="font-size:${h}px">${word}</div>
+    <div class="wc-word wc-word-bottom" style="font-size:${h}px">${word}</div>
+    <div class="wc-word wc-word-left" style="font-size:${v}px">${word}</div>
+    <div class="wc-word wc-word-right" style="font-size:${v}px">${word}</div>
+  </div>`;
+}
+
+const LEAF_POS=[[40,8],[51,7],[62,11],[25,18],[42,20],[58,17],[75,20],[14,30],[32,33],[50,28],[68,32],[86,30],[26,42],[50,44],[74,42],[40,52]];
+const APPLE_POS=[[50,9],[33,15],[67,14],[20,25],[42,22],[62,24],[80,26],[30,36],[52,33],[72,37],[40,47],[62,47]];
+function buildTree(el,positions,kind,onPick){
+  el.querySelectorAll('.node').forEach(n=>n.remove());
+  positions.forEach((p,i)=>{const n=document.createElement('div');n.className='node';n.style.left=p[0]+'%';n.style.top=p[1]+'%';n.style.zIndex=4;
+    n.innerHTML=`<div class="bob" style="animation-delay:${(i*0.53)%4}s;animation-duration:${4+(i%4)*0.6}s"><div class="${kind}-shape"></div></div>`;
+    n.addEventListener('click',()=>{if(el.dataset.locked)return;el.dataset.locked='1';
+      el.querySelectorAll('.node').forEach(o=>{if(o!==n)o.classList.add('gone');});
+      n.style.transform='translate(-50%,-50%) scale(1.5)';n.style.filter='brightness(1.4)';
+      setTimeout(()=>onPick(i),650);});
+    el.appendChild(n);});
+  delete el.dataset.locked;
+}
+
+$('btnStart').addEventListener('click',()=>{
+  state.question=$('qInput').value.trim()||'（心里默念的那件事）';
+  const imgs=shuffle(IMAGE_CARDS).slice(0,16);
+  buildTree($('treeImage'),LEAF_POS.slice(0,imgs.length),'leaf',i=>{state.image=imgs[i];$('revealedImage').src=state.image.src;go('s-feel');});
+  go('s-tree-image');
+});
+document.querySelectorAll('[data-next]').forEach(b=>b.addEventListener('click',()=>{saveInputs();go(b.dataset.next);}));
+$('btnToApple').addEventListener('click',()=>{saveInputs();
+  const words=shuffle(TEXT_CARDS).slice(0,12);
+  buildTree($('treeWord'),APPLE_POS.slice(0,words.length),'apple',i=>{state.text=words[i];$('layeredWordcard').innerHTML=wordCardHTML(state.text);go('s-reframe');});
+  go('s-tree-word');
+});
+$('btnToQuote').addEventListener('click',()=>{saveInputs();state.quote=pick(QUOTES);$('quoteText').innerHTML=state.quote.replace(/\n/g,'<br>');go('s-quote');});
+$('btnToFinal').addEventListener('click',()=>{
+  $('finalWordcard').innerHTML=wordCardHTML(state.text);$('finalQuestion').textContent=state.question;
+  const rows=[['感受',state.feel],['障碍',state.obstacle],['转念',state.reframe],['资源',state.resource],['行动',state.action]].filter(r=>r[1]);
+  $('finalJourney').innerHTML=rows.map(r=>`<div class="fj-row"><b>${r[0]}</b>${esc(r[1])}</div>`).join('');
+  $('finalQuote').textContent='「 '+state.quote.replace(/\n/g,' ')+' 」';go('s-final');
+});
+$('btnAgain').addEventListener('click',()=>{Object.assign(state,{image:null,text:null,quote:'',feel:'',obstacle:'',reframe:'',resource:'',action:''});['inFeel','inObstacle','inReframe','inResource','inAction'].forEach(id=>$(id).value='');go('s-intro');});
+$('btnSave').addEventListener('click',()=>alert('小提示：手机长按上方卡片区域，选择"存储图像"即可保存～\n（正式版会生成一张精美的合成卡片图）'));
+
+function saveInputs(){state.feel=$('inFeel').value.trim();state.obstacle=$('inObstacle').value.trim();state.reframe=$('inReframe').value.trim();state.resource=$('inResource').value.trim();state.action=$('inAction').value.trim();}
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function shuffle(a){return a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+
+/* fireflies (warm pink-gold) */
+const cv=$('particles'),cx=cv.getContext('2d');let W,H;const parts=[];
+function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;}
+resize();addEventListener('resize',resize);
+for(let i=0;i<40;i++){parts.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.9+0.5,vy:-(Math.random()*0.2+0.04),vx:(Math.random()-0.5)*0.14,a:Math.random()*0.5+0.15,tw:Math.random()*0.02+0.005,ph:Math.random()*Math.PI*2});}
+function tick(t){cx.clearRect(0,0,W,H);for(const p of parts){p.y+=p.vy;p.x+=p.vx;if(p.y<-10){p.y=H+10;p.x=Math.random()*W;}if(p.x<-10)p.x=W+10;if(p.x>W+10)p.x=-10;const a=p.a*(0.6+0.4*Math.sin(t*p.tw+p.ph));cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fillStyle=`rgba(238,190,166,${a})`;cx.shadowBlur=6;cx.shadowColor='rgba(238,180,150,.6)';cx.fill();cx.shadowBlur=0;}requestAnimationFrame(tick);}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
