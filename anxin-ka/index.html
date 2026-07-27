@@ -174,6 +174,8 @@
   .music-btn{position:fixed;top:16px;left:18px;z-index:50;width:40px;height:40px;border-radius:50%;border:1px solid rgba(236,196,172,.4);background:rgba(58,33,54,.55);color:var(--rosegold-bright);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .3s ease,background .3s ease}
   .music-btn.playing{animation:spin 3.2s linear infinite;background:rgba(138,77,99,.6)}
   @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  .music-toast{position:fixed;top:64px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:60;background:rgba(58,33,54,.92);color:var(--cream);font-size:12.5px;letter-spacing:.06em;padding:8px 16px;border-radius:999px;border:1px solid rgba(236,196,172,.3);opacity:0;pointer-events:none;transition:opacity .3s ease,transform .3s ease;white-space:nowrap}
+  .music-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -551,19 +553,21 @@ $('saveClose').addEventListener('click',()=>$('saveOverlay').classList.remove('s
 $('saveOverlay').addEventListener('click',e=>{if(e.target.id==='saveOverlay')$('saveOverlay').classList.remove('show');});
 
 /* ============ BGM：灵性治愈氛围乐，首次交互响起，贯穿全程（兼容微信/iOS） ============ */
-const bgm=new Audio('bgm.mp3');bgm.loop=true;bgm.volume=0.7;bgm.preload='auto';
+const bgm=$('bgm');bgm.volume=0.7;
 let musicOn=true,playing=false,unlocked=false;
+function toast(msg){const t=$('musicToast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
 function playBgm(){
   if(!musicOn||playing)return;
   const p=bgm.play();
-  if(p&&p.then)p.then(()=>{playing=true;$('musicBtn').classList.add('playing');})
-    .catch(err=>{console.warn('BGM 被拦截',err);});
+  if(p&&p.then)p.then(()=>{playing=true;$('musicBtn').classList.add('playing');$('musicBtn').textContent='♫';toast('♪ 音乐已开启');})
+    .catch(err=>{console.warn('BGM 被拦截',err);toast('点左上角 ♪ 手动开启');});
 }
-function pauseBgm(){playing=false;bgm.pause();$('musicBtn').classList.remove('playing');}
-bgm.addEventListener('canplay',()=>{if(unlocked&&musicOn)playBgm();});
+function pauseBgm(){playing=false;bgm.pause();$('musicBtn').classList.remove('playing');$('musicBtn').textContent='♪';}
+['canplay','loadeddata','canplaythrough'].forEach(ev=>bgm.addEventListener(ev,()=>{if(unlocked&&musicOn)playBgm();}));
+bgm.addEventListener('error',()=>toast('音乐加载失败，点 ♪ 重试'));
 $('musicBtn').addEventListener('click',e=>{
   e.stopPropagation();
-  if(bgm.paused){musicOn=true;unlocked=true;playBgm();}else{musicOn=false;pauseBgm();}
+  if(bgm.paused){musicOn=true;unlocked=true;playBgm();}else{musicOn=false;pauseBgm();toast('音乐已关闭');}
 });
 function unlock(){if(unlocked)return;unlocked=true;playBgm();}
 ['touchstart','pointerdown','click'].forEach(ev=>document.addEventListener(ev,e=>{
@@ -588,7 +592,9 @@ function tick(t){cx.clearRect(0,0,W,H);for(const p of parts){p.y+=p.vy;p.x+=p.vx
 requestAnimationFrame(tick);
 </script>
 
+<audio id="bgm" src="bgm.mp3" loop preload="auto" style="display:none"></audio>
 <button class="music-btn" id="musicBtn" aria-label="音乐开关">♪</button>
+<div class="music-toast" id="musicToast"></div>
 
 <div class="save-overlay" id="saveOverlay">
   <button class="save-close" id="saveClose">✕</button>
