@@ -309,7 +309,7 @@
 </div>
 <div class="foot-note">安 心 立 命</div>
 
-<audio id="bgm" src="bgm.mp3" loop preload="auto" style="display:none"></audio>
+<audio id="bgm" src="bgm.mp3?v=2" loop preload="auto" style="display:none"></audio>
 <button class="music-btn" id="musicBtn" aria-label="音乐开关">♪</button>
 <div class="music-toast" id="musicToast"></div>
 <div class="save-overlay" id="saveOverlay">
@@ -571,15 +571,15 @@ bgm.addEventListener('pause',()=>{$('musicBtn').classList.remove('playing');$('m
 bgm.addEventListener('error',()=>toast('音乐加载失败，点 ♪ 重试'));
 function tryPlay(){
   if(!musicOn||!bgm.paused)return;
-  try{const p=bgm.play();if(p&&p.then)p.catch(()=>toast('被拦截了，点 ♪ 手动开启'));}
-  catch(e){toast('点 ♪ 手动开启');}
+  try{const p=bgm.play();if(p&&p.then)p.catch(()=>toast('再点一下任意处，音乐就来 ♪'));}
+  catch(e){toast('再点一下任意处，音乐就来 ♪');}
 }
 $('musicBtn').addEventListener('click',e=>{
   e.stopPropagation();
   if(bgm.paused){musicOn=true;unlocked=true;tryPlay();setTimeout(()=>{if(bgm.paused&&musicOn)toast('没响？调大媒体音量后再点 ♪');},1200);}
   else{musicOn=false;bgm.pause();toast('音乐已关闭');}
 });
-function unlock(){if(unlocked)return;unlocked=true;tryPlay();}
+function unlock(){if(!bgm.paused)return;unlocked=true;tryPlay();}
 ['touchstart','pointerdown','click'].forEach(ev=>document.addEventListener(ev,e=>{
   if(e.target.closest&&e.target.closest('#musicBtn'))return;unlock();
 },{passive:true}));
