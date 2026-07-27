@@ -160,6 +160,20 @@
 
   .progress{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--rosegold),var(--rosegold-bright));z-index:10;transition:width .6s cubic-bezier(.22,.9,.3,1);width:0}
   .foot-note{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:.3em;color:rgba(200,166,166,.45);z-index:5;pointer-events:none}
+
+  /* ============ 保存卡片弹层 ============ */
+  .save-overlay{position:fixed;inset:0;z-index:99;background:rgba(28,14,26,.94);display:none;flex-direction:column;align-items:center;overflow-y:auto;padding:56px 20px 44px;-webkit-overflow-scrolling:touch;animation:ovIn .4s ease both}
+  .save-overlay.show{display:flex}
+  @keyframes ovIn{from{opacity:0}to{opacity:1}}
+  .save-img{max-width:min(92vw,420px);width:auto;border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.55),0 0 0 1px rgba(236,196,172,.25)}
+  .save-hint{color:var(--rosegold-bright);font-size:14px;letter-spacing:.18em;margin:20px 0 6px;text-align:center}
+  .save-hint small{display:block;margin-top:6px;font-size:11px;color:var(--cream-dim);letter-spacing:.1em}
+  .save-download{display:inline-block;margin-top:16px;padding:11px 34px;border-radius:999px;background:linear-gradient(135deg,var(--rosegold),var(--rosegold-bright));color:#4a2c40;font-size:14px;font-weight:600;letter-spacing:.14em;text-decoration:none;box-shadow:0 8px 24px rgba(217,160,136,.35)}
+  .save-close{position:fixed;top:16px;right:18px;z-index:100;width:38px;height:38px;border-radius:50%;border:1px solid rgba(236,196,172,.4);background:rgba(58,33,54,.7);color:var(--cream);font-size:16px;line-height:1;cursor:pointer}
+  /* ============ 音乐开关 ============ */
+  .music-btn{position:fixed;top:16px;left:18px;z-index:50;width:40px;height:40px;border-radius:50%;border:1px solid rgba(236,196,172,.4);background:rgba(58,33,54,.55);color:var(--rosegold-bright);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .3s ease,background .3s ease}
+  .music-btn.playing{animation:spin 3.2s linear infinite;background:rgba(138,77,99,.6)}
+  @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -445,7 +459,106 @@ $('btnToFinal').addEventListener('click',()=>{
   $('finalQuote').textContent='「 '+state.quote.replace(/\n/g,' ')+' 」';go('s-final');
 });
 $('btnAgain').addEventListener('click',()=>{Object.assign(state,{image:null,text:null,quote:'',feel:'',obstacle:'',reframe:'',resource:'',action:''});['inFeel','inObstacle','inReframe','inResource','inAction'].forEach(id=>$(id).value='');go('s-intro');});
-$('btnSave').addEventListener('click',()=>alert('小提示：手机长按上方卡片区域，选择"存储图像"即可保存～\n（正式版会生成一张精美的合成卡片图）'));
+/* ============ 保存卡片：canvas 合成一张可分享的图 ============ */
+function rrPath(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function loadImg(src){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=src;});}
+function wrapCJK(c,text,maxW){const L=[];let cur='';for(const ch of String(text)){if(ch==='\n'){L.push(cur);cur='';continue;}const t=cur+ch;if(c.measureText(t).width>maxW&&cur){L.push(cur);cur=ch;}else cur=t;}if(cur)L.push(cur);return L.length?L:[''];}
+function spacedH(c,text,cx,cy,ls){const ch=[...text];const ws=ch.map(x=>c.measureText(x).width);const tot=ws.reduce((a,b)=>a+b,0)+ls*(ch.length-1);let x=cx-tot/2;const al=c.textAlign;c.textAlign='left';ch.forEach((x0,i)=>{c.fillText(x0,x,cy);x+=ws[i]+ls;});c.textAlign=al;}
+function spacedV(c,text,cx,cy,step){const ch=[...text];let y=cy-step*(ch.length-1)/2;ch.forEach(x0=>{c.fillText(x0,cx,y);y+=step;});}
+
+async function composeCard(){
+  const SERIF=`'Noto Serif SC','Songti SC','STSong',serif`;
+  try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,1800))]);}catch(e){}
+  const img=await loadImg(state.image.src);
+  const hug=await loadImg(document.querySelector('.hug-frame').src);
+  const W=750,pad=64,innerW=W-2*pad;
+  const tmp=document.createElement('canvas').getContext('2d');
+  const qFS=27,qLH=42,rFS=23,rLH=35,labelW=92,qtFS=24,qtLH=38;
+  tmp.font=`400 ${qFS}px ${SERIF}`;const qLines=wrapCJK(tmp,state.question,innerW);
+  const rows=[['感受',state.feel],['障碍',state.obstacle],['转念',state.reframe],['资源',state.resource],['行动',state.action]].filter(r=>r[1]);
+  tmp.font=`400 ${rFS}px ${SERIF}`;const rowLines=rows.map(r=>({label:r[0],lines:wrapCJK(tmp,r[1],innerW-labelW)}));
+  const quoteStr='「 '+state.quote.replace(/\n/g,' ')+' 」';
+  tmp.font=`400 ${qtFS}px ${SERIF}`;const qtLines=wrapCJK(tmp,quoteStr,innerW-40);
+  const cardW=380,cardH=Math.round(cardW*1.36);
+  let y=86;const eyebrowY=y;y+=46;const subY=y;y+=62;const cardY=y;y+=cardH+58;
+  const qLabelY=y;y+=42;const qTopY=y;y+=qLines.length*qLH+30;const div1Y=y;y+=28;
+  let ry=y;const rowTops=rowLines.map(r=>{const t=ry;ry+=r.lines.length*rLH+14;return t;});y=ry+14;
+  const div2Y=y;y+=30;const qtTopY=y;y+=qtLines.length*qtLH+40;const footY=y;const H=footY+208;
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;const c=cv.getContext('2d');
+  /* 背景：瑰丽暮色 + 光晕 + 颗粒 */
+  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#331d31');bg.addColorStop(.34,'#542f49');bg.addColorStop(.66,'#7d4760');bg.addColorStop(1,'#a86272');c.fillStyle=bg;c.fillRect(0,0,W,H);
+  let rg=c.createRadialGradient(W/2,H*1.02,40,W/2,H*1.02,H*.62);rg.addColorStop(0,'rgba(232,164,146,.30)');rg.addColorStop(1,'rgba(232,164,146,0)');c.fillStyle=rg;c.fillRect(0,0,W,H);
+  rg=c.createRadialGradient(W*.08,-20,30,W*.08,-20,W*.75);rg.addColorStop(0,'rgba(120,66,110,.30)');rg.addColorStop(1,'rgba(120,66,110,0)');c.fillStyle=rg;c.fillRect(0,0,W,H);
+  for(let i=0;i<W*H*0.018;i++){c.fillStyle=`rgba(255,240,230,${Math.random()*0.035})`;c.fillRect(Math.random()*W,Math.random()*H,1,1);}
+  c.textBaseline='middle';
+  /* 眉题 + 副题 */
+  c.font=`500 21px ${SERIF}`;c.fillStyle='#d9a088';spacedH(c,'安 心 立 命 卡',W/2,eyebrowY,6);
+  c.font=`300 17px ${SERIF}`;c.fillStyle='#c8a6a6';spacedH(c,'这一轮，属于你',W/2,subY,8);
+  /* 字卡（图完整在内，字围四边） */
+  const cx0=(W-cardW)/2;
+  c.save();c.shadowColor='rgba(30,12,26,.5)';c.shadowBlur=34;c.shadowOffsetY=16;rrPath(c,cx0,cardY,cardW,cardH,14);const pg=c.createLinearGradient(cx0,cardY,cx0,cardY+cardH);pg.addColorStop(0,'#faf7f0');pg.addColorStop(1,'#efe9da');c.fillStyle=pg;c.fill();c.restore();
+  const ix=cx0+cardW*.165,iy=cardY+cardH*.128,iw=cardW*.67,ih=cardH*.744;
+  c.save();rrPath(c,ix,iy,iw,ih,8);c.clip();const s=Math.max(iw/img.width,ih/img.height);c.drawImage(img,ix+(iw-img.width*s)/2,iy+(ih-img.height*s)/2,img.width*s,img.height*s);c.restore();
+  c.strokeStyle='#8f3b35';c.lineWidth=2.2;rrPath(c,cx0+cardW*.15,cardY+cardH*.113,cardW*.7,cardH*.774,9);c.stroke();
+  c.fillStyle='#8f3b35';const word=state.text,wlen=[...word].length;
+  const hFS=wlen<=1?40:wlen===2?32:wlen<=4?22:16, vFS=wlen<=1?36:wlen===2?27:wlen<=4?19:14;
+  c.font=`600 ${hFS}px ${SERIF}`;c.textBaseline='middle';
+  spacedH(c,word,cx0+cardW/2,cardY+cardH*.0565,hFS*.32);
+  spacedH(c,word,cx0+cardW/2,cardY+cardH*.9435,hFS*.32);
+  c.font=`600 ${vFS}px ${SERIF}`;
+  spacedV(c,word,cx0+cardW*.075,cardY+cardH/2,vFS*1.3);
+  spacedV(c,word,cx0+cardW*.925,cardY+cardH/2,vFS*1.3);
+  /* 你问 + 问题 */
+  c.textBaseline='alphabetic';c.textAlign='left';
+  c.font=`500 18px ${SERIF}`;c.fillStyle='#d9a088';c.fillText('你 问',pad,qLabelY);
+  c.font=`400 ${qFS}px ${SERIF}`;c.fillStyle='#f5e2da';
+  qLines.forEach((ln,i)=>c.fillText(ln,pad,qTopY+qFS+i*qLH));
+  /* 分隔虚线 */
+  const dash=yy=>{c.save();c.strokeStyle='rgba(217,160,136,.4)';c.lineWidth=1;c.setLineDash([5,6]);c.beginPath();c.moveTo(pad,yy);c.lineTo(W-pad,yy);c.stroke();c.restore();};
+  dash(div1Y);
+  /* 旅程五间 */
+  rowLines.forEach((r,i)=>{const t=rowTops[i];
+    c.font=`600 ${rFS}px ${SERIF}`;c.fillStyle='#c96a5a';c.fillText(r.label,pad,t+rFS);
+    c.font=`400 ${rFS}px ${SERIF}`;c.fillStyle='#e8d5c8';
+    r.lines.forEach((ln,j)=>c.fillText(ln,pad+labelW,t+rFS+j*rLH));});
+  dash(div2Y);
+  /* 金句 */
+  c.font=`400 ${qtFS}px ${SERIF}`;c.fillStyle='#ecc4ac';c.textAlign='center';
+  qtLines.forEach((ln,i)=>c.fillText(ln,W/2,qtTopY+qtFS+i*qtLH));
+  /* 页脚：小精灵圆徽 + 品牌 */
+  const fc=W/2,fy=footY+52,fr=46;
+  c.save();c.beginPath();c.arc(fc,fy,fr,0,Math.PI*2);c.clip();
+  const hs=Math.max(fr*2/hug.width,fr*2/hug.height);c.drawImage(hug,fc-hug.width*hs/2,fy-hug.height*hs/2,hug.width*hs,hug.height*hs);c.restore();
+  c.strokeStyle='rgba(236,196,172,.65)';c.lineWidth=2;c.beginPath();c.arc(fc,fy,fr+3,0,Math.PI*2);c.stroke();
+  c.textAlign='center';c.font=`500 21px ${SERIF}`;c.fillStyle='#d9a088';spacedH(c,'安 心 立 命 卡',W/2,footY+132,5);
+  c.font=`300 16px ${SERIF}`;c.fillStyle='#c8a6a6';spacedH(c,'点亮自己 · 照亮他人',W/2,footY+164,4);
+  return cv;
+}
+$('btnSave').addEventListener('click',async()=>{
+  const btn=$('btnSave'),old=btn.textContent;btn.textContent='正在为你生成…';btn.disabled=true;
+  try{
+    const cv=await composeCard();
+    const url=cv.toDataURL('image/jpeg',0.93);
+    $('saveImg').src=url;$('saveDownload').href=url;
+    const mobile=/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)||('ontouchstart'in window);
+    $('saveHint').style.display=mobile?'block':'none';
+    $('saveDownload').style.display=mobile?'none':'inline-block';
+    $('saveOverlay').classList.add('show');
+  }catch(e){console.error(e);alert('生成图片失败，请重试一次～');}
+  btn.textContent=old;btn.disabled=false;
+});
+$('saveClose').addEventListener('click',()=>$('saveOverlay').classList.remove('show'));
+$('saveOverlay').addEventListener('click',e=>{if(e.target.id==='saveOverlay')$('saveOverlay').classList.remove('show');});
+
+/* ============ BGM：灵性治愈氛围乐，首次交互响起，贯穿全程 ============ */
+const bgm=new Audio('bgm.mp3');bgm.loop=true;bgm.volume=0.5;
+let musicOn=true;
+function startMusic(){if(musicOn&&bgm.paused){bgm.play().catch(()=>{});$('musicBtn').classList.add('playing');}}
+$('musicBtn').addEventListener('click',()=>{
+  if(bgm.paused){musicOn=true;bgm.play().catch(()=>{});$('musicBtn').classList.add('playing');}
+  else{musicOn=false;bgm.pause();$('musicBtn').classList.remove('playing');}
+});
+document.addEventListener('pointerdown',e=>{if(e.target.closest('#musicBtn'))return;startMusic();},{once:true});
 
 function saveInputs(){state.feel=$('inFeel').value.trim();state.obstacle=$('inObstacle').value.trim();state.reframe=$('inReframe').value.trim();state.resource=$('inResource').value.trim();state.action=$('inAction').value.trim();}
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
@@ -460,5 +573,14 @@ for(let i=0;i<40;i++){parts.push({x:Math.random()*innerWidth,y:Math.random()*inn
 function tick(t){cx.clearRect(0,0,W,H);for(const p of parts){p.y+=p.vy;p.x+=p.vx;if(p.y<-10){p.y=H+10;p.x=Math.random()*W;}if(p.x<-10)p.x=W+10;if(p.x>W+10)p.x=-10;const a=p.a*(0.6+0.4*Math.sin(t*p.tw+p.ph));cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fillStyle=`rgba(238,190,166,${a})`;cx.shadowBlur=6;cx.shadowColor='rgba(238,180,150,.6)';cx.fill();cx.shadowBlur=0;}requestAnimationFrame(tick);}
 requestAnimationFrame(tick);
 </script>
+
+<button class="music-btn" id="musicBtn" aria-label="音乐开关">♪</button>
+
+<div class="save-overlay" id="saveOverlay">
+  <button class="save-close" id="saveClose">✕</button>
+  <img class="save-img" id="saveImg" alt="安心立命卡">
+  <div class="save-hint" id="saveHint">长按图片 · 保存到相册<small>把这份照见留给此刻的自己</small></div>
+  <a class="save-download" id="saveDownload" download="安心立命卡.jpg">下载图片</a>
+</div>
 </body>
 </html>
