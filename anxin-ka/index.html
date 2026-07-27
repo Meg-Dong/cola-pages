@@ -551,28 +551,28 @@ $('saveClose').addEventListener('click',()=>$('saveOverlay').classList.remove('s
 $('saveOverlay').addEventListener('click',e=>{if(e.target.id==='saveOverlay')$('saveOverlay').classList.remove('show');});
 
 /* ============ BGM：灵性治愈氛围乐，首次交互响起，贯穿全程（兼容微信/iOS） ============ */
-const bgm=new Audio('bgm.mp3');bgm.loop=true;bgm.volume=0.6;bgm.preload='auto';
-try{bgm.load();}catch(e){}
-let musicOn=true,playing=false;
+const bgm=new Audio('bgm.mp3');bgm.loop=true;bgm.volume=0.7;bgm.preload='auto';
+let musicOn=true,playing=false,unlocked=false;
 function playBgm(){
   if(!musicOn||playing)return;
   const p=bgm.play();
   if(p&&p.then)p.then(()=>{playing=true;$('musicBtn').classList.add('playing');})
-    .catch(err=>{console.warn('BGM 播放被拦截，下次点击重试:',err);});
+    .catch(err=>{console.warn('BGM 被拦截',err);});
 }
 function pauseBgm(){playing=false;bgm.pause();$('musicBtn').classList.remove('playing');}
+bgm.addEventListener('canplay',()=>{if(unlocked&&musicOn)playBgm();});
 $('musicBtn').addEventListener('click',e=>{
   e.stopPropagation();
-  if(bgm.paused){musicOn=true;playBgm();}else{musicOn=false;pauseBgm();}
+  if(bgm.paused){musicOn=true;unlocked=true;playBgm();}else{musicOn=false;pauseBgm();}
 });
-let unlocked=false;
-function unlock(e){
-  if(unlocked)return;
-  if(e&&e.target&&e.target.closest&&e.target.closest('#musicBtn'))return;
-  unlocked=true;playBgm();
-}
-['touchstart','pointerdown','click'].forEach(ev=>document.addEventListener(ev,unlock,{passive:true}));
-document.addEventListener('WeixinJSBridgeReady',()=>{if(!unlocked){unlocked=true;playBgm();}},false);
+function unlock(){if(unlocked)return;unlocked=true;playBgm();}
+['touchstart','pointerdown','click'].forEach(ev=>document.addEventListener(ev,e=>{
+  if(e.target.closest&&e.target.closest('#musicBtn'))return;unlock();
+},{passive:true}));
+function wxUnlock(){if(typeof WeixinJSBridge!=='undefined'){WeixinJSBridge.invoke('getNetworkType',{},()=>{unlocked=true;playBgm();});}}
+if(typeof WeixinJSBridge!=='undefined')wxUnlock();
+document.addEventListener('WeixinJSBridgeReady',wxUnlock,false);
+try{bgm.load();}catch(e){}
 
 function saveInputs(){state.feel=$('inFeel').value.trim();state.obstacle=$('inObstacle').value.trim();state.reframe=$('inReframe').value.trim();state.resource=$('inResource').value.trim();state.action=$('inAction').value.trim();}
 function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
