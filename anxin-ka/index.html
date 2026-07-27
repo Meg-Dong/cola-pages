@@ -309,6 +309,16 @@
 </div>
 <div class="foot-note">安 心 立 命</div>
 
+<audio id="bgm" src="bgm.mp3" loop preload="auto" style="display:none"></audio>
+<button class="music-btn" id="musicBtn" aria-label="音乐开关">♪</button>
+<div class="music-toast" id="musicToast"></div>
+<div class="save-overlay" id="saveOverlay">
+  <button class="save-close" id="saveClose">✕</button>
+  <img class="save-img" id="saveImg" alt="安心立命卡">
+  <div class="save-hint" id="saveHint">长按图片 · 保存到相册<small>把这份照见留给此刻的自己</small></div>
+  <a class="save-download" id="saveDownload" download="安心立命卡.jpg">下载图片</a>
+</div>
+
 <script>
 /* ============ 小精灵：改用真实生成素材（走路sprite + 拥抱帧），见 intro-scene ============ */
 
@@ -554,28 +564,29 @@ $('saveOverlay').addEventListener('click',e=>{if(e.target.id==='saveOverlay')$('
 
 /* ============ BGM：灵性治愈氛围乐，首次交互响起，贯穿全程（兼容微信/iOS） ============ */
 const bgm=$('bgm');bgm.volume=0.7;
-let musicOn=true,playing=false,unlocked=false;
+let musicOn=true,unlocked=false;
 function toast(msg){const t=$('musicToast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
-function playBgm(){
-  if(!musicOn||playing)return;
-  const p=bgm.play();
-  if(p&&p.then)p.then(()=>{playing=true;$('musicBtn').classList.add('playing');$('musicBtn').textContent='♫';toast('♪ 音乐已开启');})
-    .catch(err=>{console.warn('BGM 被拦截',err);toast('点左上角 ♪ 手动开启');});
-}
-function pauseBgm(){playing=false;bgm.pause();$('musicBtn').classList.remove('playing');$('musicBtn').textContent='♪';}
-['canplay','loadeddata','canplaythrough'].forEach(ev=>bgm.addEventListener(ev,()=>{if(unlocked&&musicOn)playBgm();}));
+bgm.addEventListener('play',()=>{$('musicBtn').classList.add('playing');$('musicBtn').textContent='♫';toast('♪ 音乐已开启');});
+bgm.addEventListener('pause',()=>{$('musicBtn').classList.remove('playing');$('musicBtn').textContent='♪';});
 bgm.addEventListener('error',()=>toast('音乐加载失败，点 ♪ 重试'));
+function tryPlay(){
+  if(!musicOn||!bgm.paused)return;
+  try{const p=bgm.play();if(p&&p.then)p.catch(()=>toast('被拦截了，点 ♪ 手动开启'));}
+  catch(e){toast('点 ♪ 手动开启');}
+}
 $('musicBtn').addEventListener('click',e=>{
   e.stopPropagation();
-  if(bgm.paused){musicOn=true;unlocked=true;playBgm();}else{musicOn=false;pauseBgm();toast('音乐已关闭');}
+  if(bgm.paused){musicOn=true;unlocked=true;tryPlay();setTimeout(()=>{if(bgm.paused&&musicOn)toast('没响？调大媒体音量后再点 ♪');},1200);}
+  else{musicOn=false;bgm.pause();toast('音乐已关闭');}
 });
-function unlock(){if(unlocked)return;unlocked=true;playBgm();}
+function unlock(){if(unlocked)return;unlocked=true;tryPlay();}
 ['touchstart','pointerdown','click'].forEach(ev=>document.addEventListener(ev,e=>{
   if(e.target.closest&&e.target.closest('#musicBtn'))return;unlock();
 },{passive:true}));
-function wxUnlock(){if(typeof WeixinJSBridge!=='undefined'){WeixinJSBridge.invoke('getNetworkType',{},()=>{unlocked=true;playBgm();});}}
+function wxUnlock(){if(typeof WeixinJSBridge!=='undefined'){WeixinJSBridge.invoke('getNetworkType',{},()=>{unlocked=true;tryPlay();});}}
 if(typeof WeixinJSBridge!=='undefined')wxUnlock();
 document.addEventListener('WeixinJSBridgeReady',wxUnlock,false);
+['canplay','loadeddata'].forEach(ev=>bgm.addEventListener(ev,()=>{if(unlocked)tryPlay();}));
 try{bgm.load();}catch(e){}
 
 function saveInputs(){state.feel=$('inFeel').value.trim();state.obstacle=$('inObstacle').value.trim();state.reframe=$('inReframe').value.trim();state.resource=$('inResource').value.trim();state.action=$('inAction').value.trim();}
@@ -591,16 +602,5 @@ for(let i=0;i<40;i++){parts.push({x:Math.random()*innerWidth,y:Math.random()*inn
 function tick(t){cx.clearRect(0,0,W,H);for(const p of parts){p.y+=p.vy;p.x+=p.vx;if(p.y<-10){p.y=H+10;p.x=Math.random()*W;}if(p.x<-10)p.x=W+10;if(p.x>W+10)p.x=-10;const a=p.a*(0.6+0.4*Math.sin(t*p.tw+p.ph));cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);cx.fillStyle=`rgba(238,190,166,${a})`;cx.shadowBlur=6;cx.shadowColor='rgba(238,180,150,.6)';cx.fill();cx.shadowBlur=0;}requestAnimationFrame(tick);}
 requestAnimationFrame(tick);
 </script>
-
-<audio id="bgm" src="bgm.mp3" loop preload="auto" style="display:none"></audio>
-<button class="music-btn" id="musicBtn" aria-label="音乐开关">♪</button>
-<div class="music-toast" id="musicToast"></div>
-
-<div class="save-overlay" id="saveOverlay">
-  <button class="save-close" id="saveClose">✕</button>
-  <img class="save-img" id="saveImg" alt="安心立命卡">
-  <div class="save-hint" id="saveHint">长按图片 · 保存到相册<small>把这份照见留给此刻的自己</small></div>
-  <a class="save-download" id="saveDownload" download="安心立命卡.jpg">下载图片</a>
-</div>
 </body>
 </html>
